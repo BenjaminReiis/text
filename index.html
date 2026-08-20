@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[Nome]</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0b0b0c;
+    --bg-alt:#151517;
+    --bg-elevated:#1d1d20;
+    --border:#2a2a2d;
+    --border-soft:#1f1f22;
+    --text:#f5f5f2;
+    --muted:#9a9a9d;
+    --muted-2:#6b6b6e;
+    --volt:#d6ff3f;
+    --volt-dim:rgba(214,255,63,.16);
+    --volt-glow:rgba(214,255,63,.45);
+    --font-display:'Anton', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+    --r:4px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  a{color:inherit; text-decoration:none;}
+  img{max-width:100%; display:block;}
+  ::selection{background:var(--volt); color:#0b0b0c;}
+  a:focus-visible, button:focus-visible, input:focus-visible{ outline:2px solid var(--volt); outline-offset:3px; }
+
+  .wrap{max-width:1200px; margin:0 auto; padding:0 32px;}
+  @media (max-width:640px){ .wrap{padding:0 20px;} }
+
+  .eyebrow{
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--volt); display:flex; align-items:center; gap:10px; margin-bottom:18px;
+  }
+  .eyebrow::before{ content:''; width:24px; height:1px; background:var(--volt); }
+
+  h1,h2{ font-family:var(--font-display); font-weight:400; letter-spacing:.01em; text-transform:uppercase; line-height:.95; }
+
+  .reveal{ opacity:0; transform:translateY(24px); transition:opacity .7s ease, transform .7s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+  @media (prefers-reduced-motion:reduce){ .reveal{ opacity:1; transform:none; transition:none; } }
+
+  /* ============ HEADER ============ */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    mix-blend-mode:difference;
+  }
+  header .wrap{ display:flex; align-items:center; justify-content:space-between; height:76px; }
+  .logo{ font-family:var(--font-display); font-size:20px; letter-spacing:.02em; color:#fff; }
+  nav{ display:flex; gap:34px; }
+  nav a{ font-size:12.5px; font-family:var(--font-mono); letter-spacing:.08em; text-transform:uppercase; color:#fff; }
+  @media (max-width:760px){ nav{ display:none; } }
+
+  section{ position:relative; }
+  .band{ border-bottom:1px solid var(--border-soft); padding:120px 0; }
+  @media (max-width:640px){ .band{ padding:80px 0; } }
+
+  /* ============ HERO ============ */
+  .hero{
+    min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+    position:relative; padding-top:76px; overflow:hidden;
+    background:
+      radial-gradient(ellipse 900px 500px at 78% 30%, rgba(214,255,63,.07), transparent 60%),
+      var(--bg);
+  }
+  .hero-grid{ display:block; max-width:760px; }
+
+  h1.title{ font-size:clamp(46px, 8vw, 108px); margin-bottom:26px; }
+  h1.title .line{ display:block; }
+  h1.title .accent{ color:var(--volt); }
+  .lede{ font-size:18px; color:var(--muted); max-width:460px; margin-bottom:38px; }
+  .cta-row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .btn{
+    font-family:var(--font-mono); font-size:12.5px; font-weight:500; letter-spacing:.08em; text-transform:uppercase;
+    padding:16px 28px; border-radius:100px; border:1px solid var(--border);
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer; background:transparent; color:var(--text);
+    transition:border-color .15s, background .15s, transform .15s, color .15s;
+  }
+  .btn-primary{ background:var(--volt); color:#0b0b0c; border-color:var(--volt); font-weight:700; }
+  .btn-primary:hover{ transform:translateY(-2px) scale(1.02); }
+  .btn-ghost:hover{ border-color:var(--volt); color:var(--volt); }
+
+  .scroll-cue{
+    position:absolute; bottom:36px; left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted-2);
+  }
+  .scroll-cue .bar{ width:1px; height:34px; background:linear-gradient(var(--volt), transparent); animation:scrollbar 1.8s ease-in-out infinite; }
+  @keyframes scrollbar{ 0%{ transform:scaleY(0); transform-origin:top; } 50%{ transform:scaleY(1); transform-origin:top; } 51%{ transform-origin:bottom; } 100%{ transform:scaleY(0); transform-origin:bottom; } }
+
+  /* ============ ROBOT ============ */
+  /* abstract hero backdrop */
+  .hero-backdrop{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:56px 56px;
+    mask-image:radial-gradient(ellipse 70% 60% at 65% 40%, black 40%, transparent 90%);
+  }
+  .hero-orb{
+    position:absolute; z-index:0; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, var(--volt-glow), transparent 70%);
+    filter:blur(10px);
+    animation:orbfloat 8s ease-in-out infinite;
+  }
+  @keyframes orbfloat{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-14px,18px); } }
+  @media (prefers-reduced-motion:reduce){ .hero-orb{ animation:none; } }
+
+  /* ============ MARQUEE ============ */
+  .marquee{
+    border-top:1px solid var(--border-soft); border-bottom:1px solid var(--border-soft);
+    overflow:hidden; padding:22px 0; background:var(--bg-alt);
+  }
+  .marquee-track{ display:flex; width:max-content; animation:marquee 26s linear infinite; }
+  @media (prefers-reduced-motion:reduce){ .marquee-track{ animation:none; } }
+  @keyframes marquee{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  .marquee-item{
+    font-family:var(--font-display); font-size:26px; text-transform:uppercase; color:var(--border);
+    display:flex; align-items:center; gap:26px; padding:0 26px; white-space:nowrap;
+  }
+  .marquee-item span.hl{ color:var(--text); }
+  .marquee-item .dot{ width:8px; height:8px; border-radius:50%; background:var(--volt); }
+
+  /* ============ ABOUT ============ */
+  .about-grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:70px; align-items:start; }
+  @media (max-width:860px){ .about-grid{ grid-template-columns:1fr; gap:44px; } }
+  h2.h-section{ font-size:clamp(32px,4.4vw,54px); margin-bottom:30px; }
+  .bio-text p{ color:var(--muted); margin-bottom:18px; font-size:17px; max-width:560px; }
+  .bio-text p strong{ color:var(--text); font-weight:600; }
+
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--border-soft); border:1px solid var(--border-soft); margin-top:20px;}
+  .stat{ background:var(--bg); padding:26px 22px; }
+  .stat .n{ font-family:var(--font-display); font-size:40px; color:var(--volt); }
+  .stat .l{ font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted-2); margin-top:4px; }
+
+  .skills{ display:flex; flex-wrap:wrap; gap:10px; margin-top:26px; }
+  .skill{ font-size:12px; font-family:var(--font-mono); padding:8px 14px; border:1px solid var(--border); border-radius:100px; color:var(--muted); }
+
+  /* ============ WORK GRID ============ */
+  .work-head{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:50px; gap:20px; flex-wrap:wrap; }
+  .grid-projects{ display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; background:var(--border-soft); border:1px solid var(--border-soft); }
+  @media (max-width:920px){ .grid-projects{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:640px){ .grid-projects{ grid-template-columns:1fr; } }
+
+  .pcard{ cursor:pointer; background:var(--bg); transition:background .2s; }
+  .pcard:hover{ background:var(--bg-alt); }
+  .pcard-media{
+    aspect-ratio:4/3; overflow:hidden; position:relative;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px;
+    color:var(--muted-2); font-family:var(--font-mono); font-size:11px; text-align:center; padding:16px;
+    background:linear-gradient(135deg, var(--bg-elevated), var(--bg-alt));
+  }
+  .pcard-media img{ width:100%; height:100%; object-fit:cover; transition:transform .4s ease; }
+  .pcard:hover .pcard-media img{ transform:scale(1.06); }
+  .pcard-body{ padding:24px 26px 30px; }
+  .pcard-num{ font-family:var(--font-mono); font-size:11px; color:var(--volt); margin-bottom:10px; }
+  .pcard-title{ font-family:var(--font-display); font-size:24px; text-transform:uppercase; margin-bottom:10px; }
+  .pcard-desc{ font-size:14px; color:var(--muted); margin-bottom:16px; }
+  .pcard-tags{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ptag{ font-family:var(--font-mono); font-size:10.5px; color:var(--muted); border:1px solid var(--border); padding:4px 10px; border-radius:100px; }
+
+  /* ============ CONSOLE ============ */
+  .console{ border:1px solid var(--border); border-radius:var(--r); overflow:hidden; background:var(--bg-alt); }
+  .console-bar{ display:flex; align-items:center; gap:10px; padding:18px 22px; border-bottom:1px solid var(--border-soft); }
+  .console-bar .who-badge{ width:30px; height:30px; border-radius:50%; background:var(--volt-dim); color:var(--volt); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:14px; }
+  .console-bar .ct-name{ font-size:13.5px; font-weight:600; }
+  .console-bar .ct-status{ font-size:11.5px; color:var(--muted-2); margin-left:2px; font-family:var(--font-mono); }
+  .console-log{ height:380px; overflow-y:auto; padding:28px; display:flex; flex-direction:column; gap:20px; }
+  .msg{ max-width:80%; }
+  .msg-user{ align-self:flex-end; }
+  .msg .who{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted-2); margin-bottom:6px; }
+  .msg-user .who{ text-align:right; }
+  .msg .bubble{ padding:13px 17px; border-radius:var(--r); background:var(--bg-elevated); border:1px solid var(--border-soft); font-size:14.5px; line-height:1.55; white-space:pre-wrap;}
+  .msg-user .bubble{ background:var(--volt-dim); border-color:transparent; color:var(--text); }
+  .console-input{ display:flex; border-top:1px solid var(--border-soft); }
+  .console-input input{ flex:1; background:transparent; border:none; color:var(--text); font-family:var(--font-body); font-size:14.5px; padding:20px 22px; }
+  .console-input input::placeholder{ color:var(--muted-2); }
+  .console-input button{ background:var(--volt); color:#0b0b0c; border:none; font-weight:700; font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; padding:0 28px; cursor:pointer; }
+  .console-input button:disabled{ opacity:.5; cursor:not-allowed; }
+  .console-hint{ font-family:var(--font-mono); font-size:11.5px; color:var(--muted-2); padding:12px 22px; border-top:1px solid var(--border-soft); }
+
+  /* ============ FOOTER ============ */
+  footer{ padding:90px 0 56px; }
+  .footer-big{ font-family:var(--font-display); font-size:clamp(32px,6vw,72px); text-transform:uppercase; margin-bottom:50px; }
+  .footer-big .accent{ color:var(--volt); }
+  .footer-grid{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:26px; }
+  .contact-list{ display:flex; flex-direction:column; gap:10px; }
+  .contact-list a{ font-size:15px; color:var(--text); font-family:var(--font-mono); }
+  .contact-list a:hover{ color:var(--volt); }
+  .fine{ font-family:var(--font-mono); font-size:11.5px; color:var(--muted-2); }
+
+  /* ============ PROJECT DETAIL OVERLAY ============ */
+  .overlay{
+    position:fixed; inset:0; background:var(--bg); z-index:100;
+    transform:translateY(100%); transition:transform .45s cubic-bezier(.4,0,.2,1);
+    overflow-y:auto;
+  }
+  .overlay.open{ transform:translateY(0); }
+  .ov-top{ position:sticky; top:0; z-index:5; background:rgba(11,11,12,.9); backdrop-filter:blur(10px); border-bottom:1px solid var(--border-soft); }
+  .ov-top .wrap{ display:flex; align-items:center; justify-content:space-between; height:72px; gap:20px; }
+  .ov-back{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); cursor:pointer; background:none; border:none; }
+  .ov-back:hover{ color:var(--text); }
+  .ov-github{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; padding:10px 18px; border:1px solid var(--border); border-radius:100px; }
+  .ov-github:hover{ border-color:var(--volt); color:var(--volt); }
+
+  .ov-hero{ padding:60px 0 40px; }
+  .ov-eyebrow{ font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--volt); margin-bottom:18px; }
+  .ov-title{ font-family:var(--font-display); text-transform:uppercase; font-size:clamp(34px,5.6vw,64px); margin-bottom:20px; line-height:.98;}
+  .ov-summary{ font-size:17px; color:var(--muted); max-width:640px; margin-bottom:28px; }
+  .ov-tags{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  .ov-media{
+    aspect-ratio:16/8; border-radius:var(--r); overflow:hidden; border:1px solid var(--border);
+    background:linear-gradient(135deg, var(--bg-elevated), var(--bg-alt));
+    display:flex; align-items:center; justify-content:center; color:var(--muted-2); font-family:var(--font-mono); font-size:12px; margin-top:38px;
+  }
+  .ov-media img{ width:100%; height:100%; object-fit:cover; }
+
+  .ov-tabs{ display:flex; gap:6px; border-bottom:1px solid var(--border-soft); margin-top:10px; }
+  .ov-tab{ font-family:var(--font-mono); font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:18px 4px; margin-right:30px; border-bottom:2px solid transparent; cursor:pointer; background:none; border-top:none; border-left:none; border-right:none; }
+  .ov-tab.active{ color:var(--text); border-bottom-color:var(--volt); }
+  .ov-panel{ padding:46px 0 90px; display:none; }
+  .ov-panel.active{ display:block; }
+  .ov-panel p{ color:var(--muted); font-size:15.5px; max-width:680px; margin-bottom:16px; }
+
+  .cs-index{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:40px; }
+  .cs-index a{
+    font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--muted); border:1px solid var(--border); border-radius:100px; padding:8px 14px;
+    transition:border-color .15s, color .15s;
+  }
+  .cs-index a:hover{ border-color:var(--volt); color:var(--volt); }
+
+  .cs-section{
+    margin-bottom:22px; max-width:100%;
+    background:var(--bg-alt); border:1px solid var(--border); border-radius:8px;
+    padding:34px 36px; scroll-margin-top:100px;
+  }
+  .cs-section:last-child{ margin-bottom:0; }
+  .cs-num{ font-family:var(--font-mono); font-size:11px; color:var(--volt); letter-spacing:.12em; margin-bottom:8px; }
+  .cs-heading{ font-family:var(--font-display); text-transform:uppercase; font-size:22px; margin-bottom:16px; letter-spacing:.01em; }
+  .cs-section p{ margin-bottom:14px; max-width:680px; }
+  .cs-section ul{ color:var(--muted); font-size:15.5px; margin:0 0 14px 20px; max-width:680px; }
+  .cs-section li{ margin-bottom:6px; }
+  .cs-diagram{
+    background:var(--bg); border:1px solid var(--border-soft); border-radius:var(--r);
+    padding:18px 20px; font-family:var(--font-mono); font-size:12.5px; line-height:1.65; color:#b7bcc4;
+    overflow-x:auto; white-space:pre; margin:8px 0 18px; max-width:680px;
+  }
+  .cs-figure{ margin:20px 0 8px; border:1px solid var(--border-soft); border-radius:var(--r); overflow:hidden; max-width:760px; }
+  .cs-figure img{ width:100%; display:block; }
+  .cs-caption{ font-family:var(--font-mono); font-size:11.5px; color:var(--muted-2); padding:10px 4px 0; }
+  .cs-quote{ border-left:2px solid var(--volt); padding-left:16px; font-style:italic; color:var(--text); font-size:16px; margin:18px 0; max-width:680px; }
+
+  .code-block{
+    background:var(--bg-alt); border:1px solid var(--border); border-radius:var(--r);
+    padding:26px; font-family:var(--font-mono); font-size:13px; line-height:1.7; color:#c7ccd6;
+    overflow-x:auto; white-space:pre;
+  }
+
+  .shots-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:2px; background:var(--border-soft); border:1px solid var(--border-soft); margin-top:10px; }
+  @media (max-width:640px){ .shots-grid{ grid-template-columns:1fr; } }
+  .shot{
+    aspect-ratio:16/10; background:var(--bg);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px;
+    color:var(--muted-2); font-family:var(--font-mono); font-size:11px; text-align:center; padding:14px;
+  }
+  .shot img{ width:100%; height:100%; object-fit:cover; }
+
+  .dash-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2px; background:var(--border-soft); border:1px solid var(--border-soft); margin-bottom:32px; }
+  @media (max-width:760px){ .dash-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:480px){ .dash-grid{ grid-template-columns:1fr; } }
+  .metric{ padding:22px; background:var(--bg); }
+  .metric .num{ font-family:var(--font-display); font-size:34px; color:var(--volt); }
+  .metric .lbl{ font-size:11.5px; color:var(--muted-2); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.06em; margin-top:6px; }
+  .chart-wrap{ border:1px solid var(--border); border-radius:var(--r); padding:24px; background:var(--bg-alt); height:280px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo" id="logoName">[NOME]</div>
+    <nav>
+      <a href="#sobre">Sobre</a>
+      <a href="#trabalho">Trabalho</a>
+      <a href="#console">Converse</a>
+      <a href="#contato">Contato</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" id="topo">
+  <div class="hero-backdrop"></div>
+  <div class="hero-orb" style="width:340px; height:340px; top:8%; right:6%;"></div>
+  <div class="hero-orb" style="width:200px; height:200px; bottom:14%; right:22%; animation-delay:2s;"></div>
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="eyebrow">Software back-end &amp; robótica</div>
+      <h1 class="title reveal">
+        <span class="line">CONSTRUO</span>
+        <span class="line accent">O QUE PENSA</span>
+        <span class="line">E SE MOVE</span>
+      </h1>
+      <p class="lede reveal">Sou [Nome]. Projeto sistemas de back-end e robôs que respondem ao mundo real — meu trabalho, direto ao ponto.</p>
+      <div class="cta-row reveal">
+        <a href="#trabalho" class="btn btn-primary">Ver trabalho</a>
+        <a href="#console" class="btn btn-ghost">Conversar com a IA</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-cue"><span>Role para baixo</span><span class="bar"></span></div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track" id="marqueeTrack"></div>
+</div>
+
+<section class="band" id="sobre">
+  <div class="wrap">
+    <div class="eyebrow">Sobre</div>
+    <div class="about-grid">
+      <div class="bio-text reveal">
+        <h2 class="h-section">Meu trabalho</h2>
+        <p id="bioParagraph1">[Espaço para sua bio — de onde você veio, como chegou em back-end e robótica.]</p>
+        <p id="bioParagraph2">[Segundo parágrafo — o tipo de problema que você gosta de resolver, e o que te diferencia.]</p>
+        <div class="skills" id="skillsList"></div>
+      </div>
+      <div class="reveal">
+        <div class="stat-grid" id="statGrid"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="trabalho">
+  <div class="wrap">
+    <div class="work-head">
+      <div>
+        <div class="eyebrow">Trabalho</div>
+        <h2 class="h-section" style="margin-bottom:0;">O que eu construí</h2>
+      </div>
+      <span class="fine">clique em um projeto para abrir os detalhes</span>
+    </div>
+  </div>
+  <div class="wrap" style="padding:0;">
+    <div class="grid-projects" id="projectsGrid"></div>
+  </div>
+</section>
+
+<section class="band" id="console">
+  <div class="wrap">
+    <div class="eyebrow">Converse</div>
+    <h2 class="h-section" style="margin-bottom:12px;">Pergunte à IA</h2>
+    <p style="color:var(--muted); margin-bottom:34px; max-width:520px; font-size:15.5px;">Um assistente treinado com as informações deste site — pergunte sobre experiência, stack ou os projetos acima.</p>
+    <div class="console">
+      <div class="console-bar">
+        <div class="who-badge" id="chatBadge">N</div>
+        <span class="ct-name" id="chatName">[Nome]</span>
+        <span class="ct-status">· responde em segundos</span>
+      </div>
+      <div class="console-log" id="chatLog"></div>
+      <div class="console-input">
+        <input id="chatInput" type="text" placeholder="Pergunte algo, ex: quais tecnologias você usa?" autocomplete="off">
+        <button id="chatSend">Enviar</button>
+      </div>
+      <div class="console-hint">Enter para enviar</div>
+    </div>
+  </div>
+</section>
+
+<footer id="contato">
+  <div class="wrap">
+    <div class="footer-big">VAMOS <span class="accent">TRABALHAR</span> JUNTOS</div>
+    <div class="footer-grid">
+      <div class="contact-list" id="contactList">
+        <a href="mailto:seu-email@exemplo.com">seu-email@exemplo.com</a>
+        <a href="#" target="_blank">github.com/seu-usuario</a>
+        <a href="#" target="_blank">linkedin.com/in/seu-usuario</a>
+      </div>
+      <div class="fine">© 2026 [Nome]</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ PROJECT DETAIL OVERLAY ============ -->
+<div class="overlay" id="overlay">
+  <div class="ov-top">
+    <div class="wrap">
+      <button class="ov-back" id="ovBack">← Voltar</button>
+      <a class="ov-github" id="ovGithub" href="#" target="_blank">⌥ GitHub</a>
+    </div>
+  </div>
+  <div class="wrap ov-hero">
+    <div class="ov-eyebrow" id="ovEyebrow">CATEGORIA</div>
+    <h1 class="ov-title" id="ovTitle">Título do projeto</h1>
+    <p class="ov-summary" id="ovSummary">Resumo do projeto.</p>
+    <div class="ov-tags" id="ovTags"></div>
+    <div class="ov-media" id="ovMedia"><span>◧ imagem principal do projeto</span></div>
+
+    <div class="ov-tabs">
+      <button class="ov-tab active" data-tab="overview">Visão geral</button>
+      <button class="ov-tab" data-tab="code">Código</button>
+      <button class="ov-tab" data-tab="shots">Prints</button>
+      <button class="ov-tab" data-tab="dashboard">Dashboard</button>
+    </div>
+
+    <div class="ov-panel active" data-panel="overview">
+      <p id="ovOverview">Descrição detalhada do projeto — contexto, desafio técnico e resultado.</p>
+    </div>
+    <div class="ov-panel" data-panel="code">
+      <p>Trecho representativo do código do projeto.</p>
+      <div class="code-block" id="ovCode"></div>
+    </div>
+    <div class="ov-panel" data-panel="shots">
+      <div class="shots-grid" id="ovShots"></div>
+    </div>
+    <div class="ov-panel" data-panel="dashboard">
+      <div class="dash-grid" id="ovMetrics"></div>
+      <div class="chart-wrap" style="position:relative;">
+        <canvas id="ovChart"></canvas>
+        <div id="ovChartEmpty" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; color:var(--muted-2); font-family:var(--font-mono); font-size:12.5px; text-align:center; padding:20px;">sem dados de série temporal ainda — adicione métricas ao longo do tempo pra ativar o gráfico</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — edite tudo aqui. É só isso que muda o site.
+   ============================================================ */
+const CONFIG = {
+  name: "[Nome]",
+  role: "Software Back-End & Robótica",
+  bio1: "Espaço para sua bio — de onde você veio, como chegou em back-end e robótica.",
+  bio2: "Segundo parágrafo — o tipo de problema que você gosta de resolver, e o que te diferencia.",
+  skills: ["Python", "Node.js", "PostgreSQL", "ROS", "Docker", "C++"],
+  stats: [ {n:"6", l:"Projetos"}, {n:"2", l:"Áreas · Back-end & Robótica"} ],
+  email: "seu-email@exemplo.com",
+  github: "https://github.com/seu-usuario",
+  linkedin: "https://linkedin.com/in/seu-usuario",
+  marqueeItems: ["Back-end", "Robótica", "Sistemas distribuídos", "Controle & automação"],
+
+  projects: [
+    { title:"RT-RRT Navigation", slug:"rt-rrt", category:"Robótica", tags:["Python","RRT / RT-RRT","Planejamento de Trajetória","Collision Detection"],
+      summary:"Planejamento de trajetória em tempo real para robôs móveis em ambientes dinâmicos.",
+      github:"#", image:"assets/proj1/diagram-fig01-overview.jpeg",
+      sections:[
+        {
+          heading:"Visão geral",
+          paragraphs:[
+            "Sistema experimental de planejamento de trajetória para robôs móveis em ambientes dinâmicos. O RT-RRT mantém uma árvore de exploração entre ciclos, remove regiões que se tornam inválidas quando obstáculos se movimentam e reexpande a árvore para encontrar uma nova trajetória segura.",
+            "Meu papel: desenvolvimento completo do sistema — algoritmo de planejamento, detecção de colisões, ambiente dinâmico, atualização de trajetória, testes, segurança e observabilidade."
+          ],
+          list:["Python","RRT / RT-RRT","Geometria computacional","Planejamento de trajetória","Collision Detection","Simulação de ambientes dinâmicos","Unit Tests","Logging","Métricas de desempenho"],
+        },
+        {
+          heading:"O problema",
+          paragraphs:[
+            "Em um ambiente estático, o RRT clássico pode construir uma trajetória e utilizá-la até o destino. Mas em um ambiente dinâmico, um obstáculo pode mudar de posição depois que a trajetória já foi calculada — o que cria um problema de segurança real.",
+            "Uma solução simples seria executar o RRT novamente do zero a cada mudança. O problema é que isso gera processamento desnecessário, perda da árvore anterior, maior tempo de replanejamento, instabilidade da trajetória e dificuldade de reagir rápido às mudanças do ambiente."
+          ],
+          quote:"Como manter uma estratégia de planejamento de trajetória capaz de reagir às mudanças do ambiente sem reconstruir completamente a árvore a cada ciclo?"
+        },
+        {
+          heading:"Objetivos",
+          paragraphs:["O projeto foi guiado por quatro grupos de objetivos: técnicos, de segurança, de engenharia, e o objetivo principal de manter uma trajetória continuamente atualizada."],
+          list:[
+            "Manter a árvore entre ciclos e podar apenas os nós/ramos afetados",
+            "Detectar regiões que ficaram inválidas e reexpandir a árvore",
+            "Detectar colisões, gerar waypoints e simplificar trajetórias",
+            "Nunca seguir uma trajetória antiga que deixou de ser válida",
+            "Construir com confiabilidade, observabilidade, testes e desempenho em mente"
+          ]
+        },
+        {
+          heading:"Arquitetura do sistema",
+          paragraphs:["O ambiente dinâmico alimenta o planejador RT-RRT, que expande, poda e reexpande a árvore. Cada trajetória candidata passa por checagem de colisão antes de virar uma sequência segura de waypoints."],
+          diagram:
+`Dynamic Environment (obstacles + limits)
+            │
+            ▼
+     RT-RRT Planner
+     expansion · pruning · re-expansion · rebase
+            │
+            ▼
+     Collision Check
+     segment × obstacles
+            │
+      valid / invalid
+            │
+            ▼
+     Trajectory Manager
+     extraction · simplification · validation
+            │
+            ▼
+     Safe Trajectory
+     waypoint 1 → waypoint 2 → waypoint 3 → ...`,
+          image:"assets/proj1/diagram-fig02-pipeline.jpeg",
+          caption:"Fig. 02 — pipeline completo: environment → planner → collision check → trajectory update → waypoints"
+        },
+        {
+          heading:"Componentes principais",
+          paragraphs:[
+            "node.py representa um nó da árvore (posição, pai, custo) — a unidade básica do RRT.",
+            "planner/rrt.py é o baseline: implementação do RRT clássico, usada como referência experimental para comparação.",
+            "planner/rt_rrt.py é o núcleo do projeto. No Init, cria a árvore inicial do start até o goal. No Update, verifica quais partes da árvore continuam válidas quando o ambiente muda. No Pruning, remove os nós afetados por um obstáculo que passou a ocupar uma região antes livre. No Re-expansion, a árvore é reaproveitada em vez de reconstruída do zero — apenas o trecho inválido é substituído por novos nós até o goal."
+          ],
+          image:"assets/proj1/diagram-fig03-tree.jpeg",
+          caption:"Fig. 03 — estrutura da árvore RRT, com nós explorados e caminho até o objetivo"
+        },
+        {
+          heading:"Ambiente dinâmico",
+          paragraphs:["obstacle_map.py é responsável pelo mundo: limites, obstáculos, posição dos obstáculos, espaço livre e amostragem — a base sobre a qual o planejador atua a cada ciclo."],
+          image:"assets/proj1/diagram-fig04-dynamic-env.jpeg",
+          caption:"Fig. 04 — RT-RRT reagindo a um obstáculo que se move: plano inicial → obstáculo bloqueia o caminho → replanejamento incremental (RT-RRT preserva a árvore; o RRT clássico a descarta inteira)"
+        },
+        {
+          heading:"Detecção de colisão",
+          paragraphs:["collision.py responde a uma pergunta central de segurança: esse segmento da trajetória pode atravessar um obstáculo? Se o segmento cruzar um obstáculo, a expansão daquele ramo é rejeitada — isso impede que o RRT crie trajetórias obviamente inválidas."]
+        },
+        {
+          heading:"Arquitetura de segurança",
+          paragraphs:["Como o robô tem câmeras e sensores capazes de identificar obstáculos, a segurança foi estruturada em camadas: percepção → mapeamento → planejamento → validação → execução (ou parada/replanejamento)."],
+          diagram:
+`SENSORES
+   │
+   ▼
+Perception Layer (câmera / sensores)
+   │
+   ▼
+Environment Map
+   │
+   ▼
+RT-RRT Planner
+   │
+   ▼
+Safety Validator
+   │
+ ┌─┴─┐
+SAFE  UNSAFE
+ │      │
+Execute  STOP / REPLAN`,
+          list:[
+            "Percepção — câmeras/sensores detectam obstáculos, posição, distância e movimento",
+            "Mapeamento — as leituras atualizam o ambiente em tempo real",
+            "Planejamento — o RT-RRT calcula a trajetória",
+            "Validação — checagem de colisão + margem de segurança antes de executar",
+            "Emergency stop — regra independente do planejador: if obstacle_distance < safety_threshold: STOP"
+          ]
+        },
+        {
+          heading:"Margem de segurança",
+          paragraphs:["Não basta a trajetória não tocar o obstáculo — o robô tem dimensões físicas. Por isso a trajetória precisa evitar não só o obstáculo, mas uma região de segurança ao redor dele. Isso aproxima o projeto de um sistema robótico real."]
+        },
+        {
+          heading:"Geração de trajetória",
+          paragraphs:["O RRT produz uma sequência de nós, que é convertida em waypoints e depois simplificada — desde que o segmento simplificado continue seguro — reduzindo uma sequência longa de pontos a um caminho mais direto e executável."]
+        },
+        {
+          heading:"Confiabilidade",
+          paragraphs:["O sistema precisa detectar obstáculos novos ou movidos, trajetórias inválidas e árvores inconsistentes — e se recuperar: parar/segurar posição, podar, replanejar, validar e retomar. Se o RT-RRT não encontrar nenhuma trajetória válida, o robô não continua: ele executa uma parada segura em vez de tentar seguir em frente."]
+        },
+        {
+          heading:"Observabilidade",
+          paragraphs:["O sistema registra eventos em níveis INFO / DEBUG / WARNING / ERROR — inicialização do planner, atualização do ambiente, detecção de obstáculo na trajetória ativa, poda de nós, início e conclusão de replanejamento, validação de segurança."]
+        },
+        {
+          heading:"Testes",
+          paragraphs:["test_planner.py cobre colisão (segmento livre, atravessando e tangenciando obstáculo), o RRT clássico (gera árvore, encontra caminho, respeita limites), o RT-RRT (reage a obstáculo que se moveu, remove ramo inválido, mantém árvore válida, replaneja) e a extração/simplificação de trajetória sem remover waypoints críticos."]
+        },
+        {
+          heading:"Desafios",
+          paragraphs:["Os principais desafios técnicos foram: reagir a um ambiente que muda depois da trajetória já calculada; decidir quais partes da árvore podiam ser reaproveitadas; validar colisão por segmento e não só por ponto; garantir que o robô nunca continuasse executando uma trajetória que perdeu validade; e o trade-off entre qualidade da trajetória e tempo de planejamento."]
+        },
+        {
+          heading:"O que eu aprendi",
+          paragraphs:["Planejamento de trajetória, algoritmos probabilísticos, árvores de busca, geometria computacional, detecção de colisão, sistemas reativos, segurança em sistemas autônomos, testes automatizados, observabilidade e trade-offs entre latência e qualidade."],
+          quote:"Aprendi que em sistemas autônomos o problema não termina quando uma trajetória é encontrada. O sistema precisa continuar observando o ambiente, validar a trajetória durante a execução e possuir mecanismos de recuperação quando as condições mudam."
+        }
+      ],
+      code:`# rt_rrt.py — núcleo do planejador (estrutura simplificada)
+
+class Node:
+    def __init__(self, x, y, parent=None, cost=0):
+        self.x, self.y = x, y
+        self.parent = parent
+        self.cost = cost
+
+def update(tree, environment):
+    """Ambiente mudou: verifica quais nós continuam válidos."""
+    invalid = [n for n in tree if collides(n, environment)]
+    tree = prune(tree, invalid)
+    tree = re_expand(tree, environment)
+    return tree
+
+def safety_check(distance_to_obstacle, threshold):
+    # regra independente do planejador — última barreira de segurança
+    if distance_to_obstacle < threshold:
+        return "STOP"
+    return "OK"`,
+      screenshots:[
+        "assets/proj1/shot-lidar-pointcloud.jpeg",
+        "assets/proj1/shot-slam-dashboard.jpeg",
+        "assets/proj1/shot-map3d.jpeg",
+        "assets/proj1/shot-trajectory-dashboard.jpeg",
+        "assets/proj1/shot-map-widget.jpeg",
+        "assets/proj1/diagram-hardware-arch.jpeg"
+      ],
+      metrics:[{label:"Distância total", value:"21.45 m"},{label:"Tempo estimado", value:"45.2 s"},{label:"Waypoints planejados", value:"15"}],
+      chartLabel:null, chartData:null },
+    { title:"Projeto 2", slug:"projeto-2", category:"Robótica", tags:["ROS","C++","Sensores"],
+      summary:"Resumo curto de uma linha sobre o projeto 2.",
+      overview:"Descrição mais completa do projeto 2. Edite com os detalhes reais.",
+      github:"#", image:null,
+      code:`// exemplo — substitua pelo trecho real do projeto\nvoid Controlador::atualizar() {\n  auto leitura = sensor.ler();\n  motor.ajustarVelocidade(pid.calcular(leitura));\n}`,
+      screenshots:[null,null,null,null],
+      metrics:[{label:"Precisão", value:"±2mm"},{label:"Ciclo de controle", value:"50Hz"},{label:"Autonomia", value:"6h"}],
+      chartLabel:"Erro de posição (mm) por teste", chartData:[3.1,2.4,2.8,1.9,2.2,1.7,1.5] },
+    { title:"Projeto 3", slug:"projeto-3", category:"Back-end", tags:["Python","FastAPI","Redis"],
+      summary:"Resumo curto de uma linha sobre o projeto 3.",
+      overview:"Descrição mais completa do projeto 3. Edite com os detalhes reais.",
+      github:"#", image:null,
+      code:`# exemplo — substitua pelo trecho real do projeto\n@app.post("/eventos")\nasync def registrar_evento(evento: Evento):\n    await cache.set(evento.id, evento.json())\n    return {"status": "registrado"}`,
+      screenshots:[null,null,null,null],
+      metrics:[{label:"P95 latência", value:"80ms"},{label:"Cobertura de testes", value:"92%"},{label:"Deploys/mês", value:"24"}],
+      chartLabel:"Tempo de resposta (ms)", chartData:[95,88,101,79,84,90,80] },
+    { title:"Projeto 4", slug:"projeto-4", category:"Robótica", tags:["Raspberry Pi","Python","Visão computacional"],
+      summary:"Resumo curto de uma linha sobre o projeto 4.",
+      overview:"Descrição mais completa do projeto 4. Edite com os detalhes reais.",
+      github:"#", image:null,
+      code:`# exemplo — substitua pelo trecho real do projeto\ndef detectar_objeto(frame):\n    resultado = modelo.prever(frame)\n    return [d for d in resultado if d.confianca > 0.8]`,
+      screenshots:[null,null,null,null],
+      metrics:[{label:"FPS", value:"28"},{label:"Precisão detecção", value:"94%"},{label:"Objetos suportados", value:"12"}],
+      chartLabel:"FPS ao longo do teste", chartData:[26,27,29,28,30,27,28] },
+    { title:"Projeto 5", slug:"projeto-5", category:"Back-end", tags:["Go","gRPC","Kubernetes"],
+      summary:"Resumo curto de uma linha sobre o projeto 5.",
+      overview:"Descrição mais completa do projeto 5. Edite com os detalhes reais.",
+      github:"#", image:null,
+      code:`// exemplo — substitua pelo trecho real do projeto\nfunc (s *Server) Processar(ctx context.Context, r *pb.Requisicao) (*pb.Resposta, error) {\n    return s.fila.Enviar(r)\n}`,
+      screenshots:[null,null,null,null],
+      metrics:[{label:"Pods ativos", value:"14"},{label:"Throughput", value:"3.4k/s"},{label:"Erro médio", value:"0.02%"}],
+      chartLabel:"Throughput (req/s)", chartData:[3100,3300,3250,3400,3600,3450,3400] },
+    { title:"Projeto 6", slug:"projeto-6", category:"Robótica", tags:["Arduino","C","IoT"],
+      summary:"Resumo curto de uma linha sobre o projeto 6.",
+      overview:"Descrição mais completa do projeto 6. Edite com os detalhes reais.",
+      github:"#", image:null,
+      code:`// exemplo — substitua pelo trecho real do projeto\nvoid loop() {\n  float temp = lerSensor();\n  if (temp > LIMITE) acionarAlarme();\n}`,
+      screenshots:[null,null,null,null],
+      metrics:[{label:"Consumo", value:"180mA"},{label:"Alcance rádio", value:"120m"},{label:"Nós na rede", value:"9"}],
+      chartLabel:"Temperatura monitorada (°C)", chartData:[22,23,24,26,25,24,23] },
+  ]
+};
+
+document.title = CONFIG.name;
+document.getElementById('logoName').textContent = CONFIG.name;
+document.getElementById('chatName').textContent = CONFIG.name;
+document.getElementById('chatBadge').textContent = (CONFIG.name.replace(/[\[\]]/g,'').charAt(0) || 'N').toUpperCase();
+document.getElementById('bioParagraph1').textContent = CONFIG.bio1;
+document.getElementById('bioParagraph2').textContent = CONFIG.bio2;
+document.querySelector('.lede').textContent = `Sou ${CONFIG.name}. Projeto sistemas de back-end e robôs que respondem ao mundo real — meu trabalho, direto ao ponto.`;
+document.querySelector('.fine').textContent = `© 2026 ${CONFIG.name}`;
+
+const skillsList = document.getElementById('skillsList');
+CONFIG.skills.forEach(s=>{ const d=document.createElement('div'); d.className='skill'; d.textContent=s; skillsList.appendChild(d); });
+
+const statGrid = document.getElementById('statGrid');
+CONFIG.stats.forEach(s=>{ const d=document.createElement('div'); d.className='stat'; d.innerHTML=`<div class="n">${s.n}</div><div class="l">${s.l}</div>`; statGrid.appendChild(d); });
+
+const marqueeTrack = document.getElementById('marqueeTrack');
+const marqueeHTML = CONFIG.marqueeItems.map(m=>`<div class="marquee-item"><span class="hl">${m}</span><span class="dot"></span></div>`).join('');
+marqueeTrack.innerHTML = marqueeHTML + marqueeHTML;
+
+const contactLinks = document.querySelectorAll('#contactList a');
+contactLinks[0].textContent = CONFIG.email; contactLinks[0].href = 'mailto:'+CONFIG.email;
+contactLinks[1].textContent = CONFIG.github.replace('https://',''); contactLinks[1].href = CONFIG.github;
+contactLinks[2].textContent = CONFIG.linkedin.replace('https://',''); contactLinks[2].href = CONFIG.linkedin;
+
+const grid = document.getElementById('projectsGrid');
+CONFIG.projects.forEach((p, idx)=>{
+  const card = document.createElement('div');
+  card.className = 'pcard';
+  card.innerHTML = `
+    <div class="pcard-media">${p.image ? `<img src="${p.image}" alt="${p.title}">` : `<span>◧ imagem ainda não enviada</span>`}</div>
+    <div class="pcard-body">
+      <div class="pcard-num">0${idx+1}</div>
+      <div class="pcard-title">${p.title}</div>
+      <div class="pcard-desc">${p.summary}</div>
+      <div class="pcard-tags">${p.tags.map(t=>`<span class="ptag">${t}</span>`).join('')}</div>
+    </div>`;
+  card.addEventListener('click', ()=> openProject(idx));
+  grid.appendChild(card);
+});
+
+const overlay = document.getElementById('overlay');
+let currentChart = null;
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function renderOverview(p){
+  if(!p.sections || !p.sections.length){
+    return `<p>${esc(p.overview)}</p>`;
+  }
+  const index = `<div class="cs-index">${p.sections.map((s,i)=>`<a href="#sec-${p.slug}-${i}">${String(i+1).padStart(2,'0')} · ${esc(s.heading)}</a>`).join('')}</div>`;
+  const body = p.sections.map((s, i)=>{
+    let html = `<div class="cs-section" id="sec-${p.slug}-${i}">`;
+    html += `<div class="cs-num">${String(i+1).padStart(2,'0')}</div>`;
+    html += `<div class="cs-heading">${esc(s.heading)}</div>`;
+    (s.paragraphs||[]).forEach(par=>{ html += `<p>${esc(par)}</p>`; });
+    if(s.list && s.list.length){
+      html += `<ul>${s.list.map(li=>`<li>${esc(li)}</li>`).join('')}</ul>`;
+    }
+    if(s.diagram){ html += `<div class="cs-diagram">${esc(s.diagram)}</div>`; }
+    if(s.quote){ html += `<div class="cs-quote">${esc(s.quote)}</div>`; }
+    if(s.image){
+      html += `<div class="cs-figure"><img src="${s.image}" alt="${esc(s.heading)}">${s.caption ? `<div class="cs-caption">${esc(s.caption)}</div>` : ''}</div>`;
+    }
+    html += `</div>`;
+    return html;
+  }).join('<div style="height:22px"></div>');
+  return index + body;
+}
+
+function openProject(idx){
+  const p = CONFIG.projects[idx];
+  document.getElementById('ovEyebrow').textContent = p.category;
+  document.getElementById('ovTitle').textContent = p.title;
+  document.getElementById('ovSummary').textContent = p.summary;
+  document.getElementById('ovOverview').innerHTML = renderOverview(p);
+  document.getElementById('ovTags').innerHTML = p.tags.map(t=>`<span class="ptag">${t}</span>`).join('');
+  document.getElementById('ovGithub').href = p.github || '#';
+  document.getElementById('ovMedia').innerHTML = p.image ? `<img src="${p.image}">` : `<span>◧ imagem principal do projeto</span>`;
+  document.getElementById('ovCode').textContent = p.code;
+
+  const shotsEl = document.getElementById('ovShots');
+  shotsEl.innerHTML = p.screenshots.map((s,i)=> s
+    ? `<div class="shot"><img src="${s}"></div>`
+    : `<div class="shot"><span>◧ print ${i+1}</span><span>ainda não enviado</span></div>`
+  ).join('');
+
+  const metricsEl = document.getElementById('ovMetrics');
+  metricsEl.innerHTML = p.metrics.map(m=>`<div class="metric"><div class="num">${m.value}</div><div class="lbl">${m.label}</div></div>`).join('');
+
+  if(currentChart){ currentChart.destroy(); currentChart = null; }
+  const chartCanvas = document.getElementById('ovChart');
+  const chartEmpty = document.getElementById('ovChartEmpty');
+  if(p.chartData && p.chartData.length){
+    chartCanvas.style.display = '';
+    chartEmpty.style.display = 'none';
+    const ctx = chartCanvas.getContext('2d');
+    currentChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: p.chartData.map((_,i)=>`D${i+1}`), datasets: [{ label: p.chartLabel, data: p.chartData, borderColor:'#d6ff3f', backgroundColor:'rgba(214,255,63,.12)', tension:.35, fill:true, pointRadius:3 }] },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ labels:{ color:'#9a9a9d', font:{family:'Inter'} } } },
+        scales:{
+          x:{ ticks:{ color:'#6b6b6e', font:{family:'IBM Plex Mono', size:10} }, grid:{ color:'#1f1f22' } },
+          y:{ ticks:{ color:'#6b6b6e', font:{family:'IBM Plex Mono', size:10} }, grid:{ color:'#1f1f22' } }
+        }
+      }
+    });
+  } else {
+    chartCanvas.style.display = 'none';
+    chartEmpty.style.display = 'flex';
+  }
+
+  document.querySelectorAll('.ov-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.ov-tab[data-tab="overview"]').classList.add('active');
+  document.querySelectorAll('.ov-panel').forEach(pn=>pn.classList.remove('active'));
+  document.querySelector('.ov-panel[data-panel="overview"]').classList.add('active');
+
+  overlay.classList.add('open');
+  overlay.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+document.getElementById('ovBack').addEventListener('click', ()=>{ overlay.classList.remove('open'); document.body.style.overflow=''; });
+document.querySelectorAll('.ov-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.ov-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.ov-panel').forEach(pn=>pn.classList.remove('active'));
+    document.querySelector(`.ov-panel[data-panel="${tab.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+const chatLog = document.getElementById('chatLog');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+let history = [];
+function addMsg(role, text){
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role==='user' ? 'msg-user' : 'msg-ai');
+  div.innerHTML = `<div class="who">${role==='user' ? 'você' : CONFIG.name}</div><div class="bubble"></div>`;
+  div.querySelector('.bubble').textContent = text;
+  chatLog.appendChild(div); chatLog.scrollTop = chatLog.scrollHeight;
+  return div.querySelector('.bubble');
+}
+addMsg('ai', `Oi! Pode perguntar sobre minha experiência, stack técnica ou qualquer um dos projetos acima.`);
+
+async function sendMessage(){
+  const text = chatInput.value.trim();
+  if(!text) return;
+  chatInput.value = ''; chatSend.disabled = true;
+  addMsg('user', text);
+  history.push({ role:'user', content:text });
+  const bubble = addMsg('ai', '...');
+
+  const systemPrompt = `Você é a versão conversacional do site pessoal de ${CONFIG.name}, ${CONFIG.role}.
+Responda em português, na primeira pessoa, como se fosse ${CONFIG.name}. Use apenas as informações abaixo.
+Se não souber algo, diga que essa informação ainda não foi adicionada ao site, sem inventar.
+
+BIO: ${CONFIG.bio1} ${CONFIG.bio2}
+STACK: ${CONFIG.skills.join(', ')}
+PROJETOS: ${CONFIG.projects.map(p=>`${p.title} (${p.category}): ${p.summary}`).join(' | ')}
+Contato: ${CONFIG.email} · ${CONFIG.github} · ${CONFIG.linkedin}
+
+Seja breve (2-4 frases), tom direto e confiante.`;
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:1000, system:systemPrompt, messages:history })
+    });
+    const data = await response.json();
+    const aiText = (data.content||[]).map(b=>b.text||'').join('\n').trim() || 'Não consegui responder agora — tenta de novo.';
+    bubble.textContent = aiText;
+    history.push({ role:'assistant', content:aiText });
+  } catch(err){
+    bubble.textContent = 'Erro ao conectar com a IA. Tenta novamente em instantes.';
+  } finally {
+    chatSend.disabled = false; chatLog.scrollTop = chatLog.scrollHeight;
+  }
+}
+chatSend.addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', e=>{ if(e.key==='Enter') sendMessage(); });
+
+const io = new IntersectionObserver((entries)=>{ entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); }); }, { threshold:.15 });
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
